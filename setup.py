@@ -8,6 +8,7 @@ setup(
     long_description_content_type="text/markdown",
     author="Konstantin Weber",
     license="MIT",
+    url="https://github.com/koproductions-code/groheblue",
     packages=find_packages(),
     install_requires=[
         "aiohttp==3.10.10",
