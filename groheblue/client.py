@@ -112,7 +112,7 @@ class GroheClient:
         Raises:
             RuntimeError: If the water dispensing operation fails.
         """
-        success = execute_tap_command(
+        success = await execute_tap_command(
             device, await self.get_access_token(), tap_type, amount
         )
 
