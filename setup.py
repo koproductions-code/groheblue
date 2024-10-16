@@ -11,9 +11,9 @@ setup(
     url="https://github.com/koproductions-code/groheblue",
     packages=find_packages(),
     install_requires=[
-        "aiohttp==3.10.10",
+        "aiohttp>=3.10.8",
         "bs4==0.0.2",
-        "httpx==0.27.2",
+        "httpx>=0.27.0",
     ],
     python_requires=">=3.6",
 )
