@@ -1,5 +1,5 @@
 # groheblue
-A python package for interacting with the Grohe Blue API. The API uses the Grohe IOT API which is used by the Grohe Blue app. The API is not publicly documented and may change at any time.
+A python package for interacting with the Grohe Blue API. The API uses the Grohe IOT API which is used by the Grohe Blue app. The API is not publicly documented and may change at any time. I am not affiliated with Grohe or the Grohe Blue app in any way.
 
 ## Restrictions
 * The package currently only supports the **Grohe Blue Home** device, because this is the only one I have. If you have a **Grohe Blue Professional** device and are interested in creating support for this device, please contact me.
