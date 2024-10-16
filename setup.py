@@ -9,6 +9,10 @@ setup(
     author="Konstantin Weber",
     license="MIT",
     packages=find_packages(),
-    install_requires=[],
+    install_requires=[
+        "aiohttp==3.10.10",
+        "bs4==0.0.2",
+        "httpx==0.27.2",
+    ],
     python_requires=">=3.6",
 )
