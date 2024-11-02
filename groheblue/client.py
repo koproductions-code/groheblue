@@ -87,13 +87,12 @@ class GroheClient:
         access_token = await self.get_access_token()
         data = await get_dashboard_data(access_token)
 
-        location = data["locations"][0]
-        room = location["rooms"][0]
-
-        for appliance in room["appliances"]:
-            appliance_id = appliance["appliance_id"]
-            device = GroheDevice(location["id"], room["id"], appliance_id, appliance)
-            devices.append(device)
+        for location in data["locations"]:
+            for room in location["rooms"]:
+                for appliance in room["appliances"]:
+                    appliance_id = appliance["appliance_id"]
+                    device = GroheDevice(location["id"], room["id"], appliance_id, appliance)
+                    devices.append(device)
 
         return devices
 
