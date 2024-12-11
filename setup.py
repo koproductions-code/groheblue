@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="groheblue",
-    version="0.2.0",
+    version="0.2.1",
     description="A python package for interacting with the Grohe Blue API.",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
