@@ -2,7 +2,7 @@ import logging
 from datetime import datetime, timedelta
 
 from .tokens import get_refresh_tokens, get_tokens_from_credentials
-from .controller import execute_tap_command, get_dashboard_data
+from .controller import execute_tap_command, get_dashboard_data, execute_custom_command
 from .classes import GroheDevice
 
 
@@ -118,5 +118,34 @@ class GroheClient:
         if not success:
             logging.error("Failed to dispense water.")
             raise RuntimeError("Failed to dispense water.")
+
+        return success
+    
+    async def custom_command(self, device, **kwargs):
+        """
+        Executes a custom command on the given device. 
+        !!! Only use this if you know what you are doing. !!!
+
+        Args:
+            device (GroheDevice): The device to execute the command on.
+            **kwargs: The command parameters. Defaults are:
+                co2_status_reset: False
+                tap_type: None
+                cleaning_mode: False
+                filter_status_reset: False
+                get_current_measurement: False
+                tap_amount: None
+                factory_reset: False
+                revoke_flush_confirmation: False
+                exec_auto_flush: False
+
+        Returns:
+            bool: True if the command was executed successfully, False otherwise.
+        """
+        success = await execute_custom_command(device, await self.get_access_token(), **kwargs)
+
+        if not success:
+            logging.error("Failed to execute custom command.")
+            raise RuntimeError("Failed to execute custom command.")
 
         return success

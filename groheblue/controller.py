@@ -4,26 +4,23 @@ import httpx
 from .classes import GroheDevice
 from .utils import (
     create_command_url_from_device,
-    get_command,
     check_tap_params,
     get_auth_header,
 )
 
-
-async def execute_tap_command(
-    device: GroheDevice, token: str, tap_type: int, amount: int
+async def execute_command(
+    device: GroheDevice, token: str, command: dict
 ) -> bool:
     """
-    Executes the command for the given tap type and amount.
+    Executes the command for the given device.
 
     Args:
-        tap_type: The type of tap. 1 for still, 2 for medium, 3 for sparkling.
-        amount: The amount of water to be dispensed in ml in steps of 50ml.
-        tries: The number of tries to execute the command.
+        device: The device to execute the command on.
+        token: The access token to use.
+        command: The command to execute.
 
     Returns: True if the command was executed successfully, False otherwise.
     """
-    check_tap_params(tap_type, amount)
 
     async def send_command():
         command_url = create_command_url_from_device(device)
@@ -35,7 +32,7 @@ async def execute_tap_command(
         data = {
             "type": None,
             "appliance_id": device.appliance_id,
-            "command": get_command(tap_type, amount),
+            "command": command,
             "commandb64": None,
             "timestamp": None,
         }
@@ -69,6 +66,61 @@ async def execute_tap_command(
 
     return await send_command()
 
+async def execute_tap_command(
+    device: GroheDevice, token: str, tap_type: int, amount: int
+) -> bool:
+    """
+    Executes the command for the given tap type and amount.
+
+    Args:
+        device: The device to execute the command on.
+        token: The access token to use.
+        tap_type: The type of tap. 1 for still, 2 for medium, 3 for sparkling.
+        amount: The amount of water to be dispensed in ml in steps of 50ml.
+
+    Returns: True if the command was executed successfully, False otherwise.
+    """
+    check_tap_params(tap_type, amount)
+
+    command = {
+        "co2_status_reset": False,
+        "tap_type": tap_type,
+        "cleaning_mode": False,
+        "filter_status_reset": False,
+        "get_current_measurement": False,
+        "tap_amount": amount,
+        "factory_reset": False,
+        "revoke_flush_confirmation": False,
+        "exec_auto_flush": False,
+    }
+
+    success = await execute_command(device, token, command)
+
+    return success
+
+async def execute_custom_command(
+        device: GroheDevice, token: str, co2_reset=False, filter_reset=False, flush=False, tap_type=None, tap_amount=None, clean_mode=False, get_current_measurement=False, revoke_flush_confirmation=False, factory_reset=False
+) -> bool:
+    """
+    Executes a custom command for the given device.
+
+    Returns: True if the command was executed successfully, False otherwise.
+    """
+    command = {
+        "co2_status_reset": co2_reset,
+        "tap_type": tap_type,
+        "cleaning_mode": clean_mode,
+        "filter_status_reset": filter_reset,
+        "get_current_measurement": get_current_measurement,
+        "tap_amount": tap_amount,
+        "factory_reset": factory_reset,
+        "revoke_flush_confirmation": revoke_flush_confirmation,
+        "exec_auto_flush": flush,
+    }
+
+    success = await execute_command(device, token, command)
+
+    return success
 
 async def get_dashboard_data(access_token) -> dict:
     """

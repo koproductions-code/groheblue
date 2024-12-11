@@ -19,30 +19,6 @@ def create_command_url_from_device(device: GroheDevice):
         f"/command"
     )
 
-
-def get_command(tap_type: int, amount: int) -> dict:
-    """
-    Returns the command to execute for the given tap type and amount.
-    Args:
-        tap_type: The type of tap. 1 for still, 2 for medium, 3 for sparkling.
-        amount: The amount of water to be dispensed in ml.
-
-    Returns: The command to execute.
-
-    """
-    return {
-        "co2_status_reset": False,
-        "tap_type": tap_type,
-        "cleaning_mode": False,
-        "filter_status_reset": False,
-        "get_current_measurement": False,
-        "tap_amount": amount,
-        "factory_reset": False,
-        "revoke_flush_confirmation": False,
-        "exec_auto_flush": False,
-    }
-
-
 def check_tap_params(tap_type: int, amount: int) -> None:
     """
     Checks the given tap parameters.
