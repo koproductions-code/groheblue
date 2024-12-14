@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="groheblue",
-    version="0.3.0",
+    version="0.3.1",
     description="A python package for interacting with the Grohe Blue API.",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
@@ -10,7 +10,7 @@ setup(
     license="MIT",
     url="https://github.com/koproductions-code/groheblue",
     project_urls={
-        'GitHub': 'https://github.com/koproductions-code/groheblue',
+        "GitHub": "https://github.com/koproductions-code/groheblue",
     },
     packages=find_packages(),
     install_requires=[
