@@ -1,4 +1,5 @@
 import logging
+import asyncio
 from datetime import datetime, timedelta
 
 from .tokens import get_refresh_tokens, get_tokens_from_credentials
@@ -70,6 +71,40 @@ class GroheClient:
         if datetime.now() > self.access_token_expiring_date:
             await self.refresh_tokens()
         return self.access_token
+
+    async def get_current_measurement(self, device: GroheDevice) -> GroheDevice:
+        """
+        Retrieves the current measurement of the given device.
+
+        Args:
+            device (GroheDevice): The device to get the current measurement from.
+
+        Returns:
+            GroheDevice: The device with the new measurement data.
+        """
+        access_token = await self.get_access_token()
+        success = await execute_custom_command(device, access_token, get_current_measurement=True)
+
+        if not success:
+            logging.error("Failed to get current measurement.")
+            raise RuntimeError("Failed to get current measurement.")
+        
+        new_data = False
+        counter = 0
+
+        while not(new_data) and counter < 5:
+            await asyncio.sleep(2)
+            data = await get_dashboard_data(access_token)
+            for location in data["locations"]:
+                for room in location["rooms"]:
+                    for appliance in room["appliances"]:
+                        if appliance["appliance_id"] == device.appliance_id:
+                            device.data_latest.timestamp != appliance["data_latest"]["measurement"]["timestamp"]
+                            new_data = True
+            
+            counter += 1
+        
+        return GroheDevice(device.location_id, device.room_id, device.appliance_id, appliance)
 
     async def get_devices(self) -> list[GroheDevice]:
         """

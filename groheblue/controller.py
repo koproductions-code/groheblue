@@ -36,7 +36,7 @@ async def execute_command(
             "commandb64": None,
             "timestamp": None,
         }
-
+        
         async with httpx.AsyncClient() as client:
             try:
                 response = await client.post(command_url, headers=headers, json=data)
