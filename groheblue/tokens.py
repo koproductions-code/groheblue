@@ -41,28 +41,32 @@ async def get_tokens_from_credentials(
         "Referer": AUTH_BASE_URL,
     }
 
-    response = await client.post(
-        action_url, data=payload, headers=headers, follow_redirects=False
-    )
-    if response.status_code != 302:
-        raise Exception(
-            "Invalid username/password or unexpected response from Grohe service"
+    try:
+        response = await client.post(
+            action_url, data=payload, headers=headers, follow_redirects=False
         )
+        response.raise_for_status()
+    except httpx.HTTPStatusError as exc:
+        if exc.response.status_code == 302:
+            location = exc.response.headers.get("Location")
+            if not location:
+                raise Exception("No redirect location found after login")
 
-    # Step 3: Follow the redirect to get the token URL
-    location = response.headers.get("Location")
-    if not location:
-        raise Exception("No redirect location found after login")
+            tokens_url = location.replace("ondus://", "https://")
 
-    tokens_url = location.replace("ondus://", "https://")
+            # Step 3: Get the tokens
+            response = await client.get(tokens_url)
+            response.raise_for_status()
+            json_data = response.json()
 
-    # Step 4: Get the tokens
-    response = await client.get(tokens_url)
-    response.raise_for_status()
-    json_data = response.json()
+            tokens = get_tokens_from_json(json_data)
+            return tokens
+        else:
+            raise
 
-    tokens = get_tokens_from_json(json_data)
-    return tokens
+    raise Exception(
+        "Invalid username/password or unexpected response from Grohe service"
+    )
 
 
 def get_tokens_from_json(json_data: dict) -> dict:
