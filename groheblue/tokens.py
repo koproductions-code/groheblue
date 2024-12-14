@@ -1,4 +1,4 @@
-import aiohttp
+import httpx
 import urllib.parse
 from bs4 import BeautifulSoup
 
@@ -15,11 +15,11 @@ async def get_tokens_from_credentials(grohe_email: str, grohe_password: str) -> 
 
     Returns: A dict with the tokens.
     """
-    async with aiohttp.ClientSession() as session:
+    async with httpx.AsyncClient() as client:
         # Step 1: Get the login page to retrieve the action URL
-        async with session.get(AUTH_BASE_URL) as response:
-            response.raise_for_status()
-            html = await response.text()
+        response = await client.get(AUTH_BASE_URL, follow_redirects=True)
+        response.raise_for_status()
+        html = response.text
 
         # Parse the HTML to extract the form action URL
         soup = BeautifulSoup(html, "html.parser")
@@ -40,25 +40,25 @@ async def get_tokens_from_credentials(grohe_email: str, grohe_password: str) -> 
             "Referer": AUTH_BASE_URL,
         }
 
-        async with session.post(
-            action_url, data=payload, headers=headers, allow_redirects=False
-        ) as response:
-            if response.status != 302:
-                raise Exception(
-                    "Invalid username/password or unexpected response from Grohe service"
-                )
+        response = await client.post(
+            action_url, data=payload, headers=headers, follow_redirects=False
+        )
+        if response.status_code != 302:
+            raise Exception(
+                "Invalid username/password or unexpected response from Grohe service"
+            )
 
-            # Step 3: Follow the redirect to get the token URL
-            location = response.headers.get("Location")
-            if not location:
-                raise Exception("No redirect location found after login")
+        # Step 3: Follow the redirect to get the token URL
+        location = response.headers.get("Location")
+        if not location:
+            raise Exception("No redirect location found after login")
 
-            tokens_url = location.replace("ondus://", "https://")
+        tokens_url = location.replace("ondus://", "https://")
 
         # Step 4: Get the tokens
-        async with session.get(tokens_url) as response:
-            response.raise_for_status()
-            json_data = await response.json()
+        response = await client.get(tokens_url)
+        response.raise_for_status()
+        json_data = response.json()
 
         tokens = get_tokens_from_json(json_data)
         return tokens
@@ -90,10 +90,10 @@ async def get_refresh_tokens(refresh_token: str) -> dict:
     Returns: A dict with the new tokens.
     """
     data = {"refresh_token": refresh_token, "grant_type": "refresh_token"}
-    async with aiohttp.ClientSession() as session:
-        async with session.post(REFRESH_TOKEN_BASE_URL, json=data) as response:
-            response.raise_for_status()
-            json_data = await response.json()
+    async with httpx.AsyncClient() as client:
+        response = await client.post(REFRESH_TOKEN_BASE_URL, json=data)
+        response.raise_for_status()
+        json_data = response.json()
 
     tokens = get_tokens_from_json(json_data)
     return tokens

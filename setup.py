@@ -14,7 +14,6 @@ setup(
     },
     packages=find_packages(),
     install_requires=[
-        "aiohttp>=3.10.8",
         "bs4==0.0.2",
         "httpx>=0.27.0",
     ],
