@@ -154,7 +154,6 @@ async def get_dashboard_data(access_token, client: httpx.AsyncClient) -> dict:
     try:
         response = await client.get(appliance_info_url, headers=headers)
         response.raise_for_status()
-        logging.info("Appliance information retrieved successfully.")
         return response.json()
 
     except httpx.HTTPStatusError as http_err:
