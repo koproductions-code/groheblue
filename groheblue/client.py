@@ -1,5 +1,6 @@
 import logging
 import asyncio
+import httpx
 from datetime import datetime, timedelta
 
 from .tokens import get_refresh_tokens, get_tokens_from_credentials
@@ -8,12 +9,15 @@ from .classes import GroheDevice
 
 
 class GroheClient:
-    def __init__(self, email: str, password: str):
+    def __init__(
+        self, email: str, password: str, httpx_client: httpx.AsyncClient = None
+    ):
         self.email = email
         self.password = password
         self.access_token = None
         self.refresh_token = None
         self.access_token_expiring_date = None
+        self.httpx_client = httpx_client or httpx.AsyncClient()
 
     async def login(self):
         """
@@ -30,7 +34,9 @@ class GroheClient:
             None
         """
         try:
-            tokens = await get_tokens_from_credentials(self.email, self.password)
+            tokens = await get_tokens_from_credentials(
+                self.email, self.password, self.httpx_client
+            )
             self.access_token = tokens["access_token"]
             self.access_token_expiring_date = datetime.now() + timedelta(
                 seconds=tokens["access_token_expires_in"] - 60
@@ -53,7 +59,7 @@ class GroheClient:
         Returns:
             None
         """
-        tokens = await get_refresh_tokens(self.refresh_token)
+        tokens = await get_refresh_tokens(self.refresh_token, self.httpx_client)
         self.access_token = tokens["access_token"]
         self.refresh_token = tokens["refresh_token"]
         self.access_token_expiring_date = datetime.now() + timedelta(
@@ -83,28 +89,34 @@ class GroheClient:
             GroheDevice: The device with the new measurement data.
         """
         access_token = await self.get_access_token()
-        success = await execute_custom_command(device, access_token, get_current_measurement=True)
+        success = await execute_custom_command(
+            device, access_token, self.httpx_client, get_current_measurement=True
+        )
 
         if not success:
             logging.error("Failed to get current measurement.")
             raise RuntimeError("Failed to get current measurement.")
-        
+
         new_data = False
         counter = 0
 
-        while not(new_data) and counter < 5:
+        while not (new_data) and counter < 5:
             await asyncio.sleep(2)
-            data = await get_dashboard_data(access_token)
+            data = await get_dashboard_data(access_token, self.httpx_client)
             for location in data["locations"]:
                 for room in location["rooms"]:
                     for appliance in room["appliances"]:
                         if appliance["appliance_id"] == device.appliance_id:
-                            device.data_latest.timestamp != appliance["data_latest"]["measurement"]["timestamp"]
+                            device.data_latest.timestamp != appliance["data_latest"][
+                                "measurement"
+                            ]["timestamp"]
                             new_data = True
-            
+
             counter += 1
-        
-        return GroheDevice(device.location_id, device.room_id, device.appliance_id, appliance)
+
+        return GroheDevice(
+            device.location_id, device.room_id, device.appliance_id, appliance
+        )
 
     async def get_devices(self) -> list[GroheDevice]:
         """
@@ -120,13 +132,15 @@ class GroheClient:
         devices = []
 
         access_token = await self.get_access_token()
-        data = await get_dashboard_data(access_token)
+        data = await get_dashboard_data(access_token, self.httpx_client)
 
         for location in data["locations"]:
             for room in location["rooms"]:
                 for appliance in room["appliances"]:
                     appliance_id = appliance["appliance_id"]
-                    device = GroheDevice(location["id"], room["id"], appliance_id, appliance)
+                    device = GroheDevice(
+                        location["id"], room["id"], appliance_id, appliance
+                    )
                     devices.append(device)
 
         return devices
@@ -147,7 +161,7 @@ class GroheClient:
             RuntimeError: If the water dispensing operation fails.
         """
         success = await execute_tap_command(
-            device, await self.get_access_token(), tap_type, amount
+            device, await self.get_access_token(), self.httpx_client, tap_type, amount
         )
 
         if not success:
@@ -155,10 +169,10 @@ class GroheClient:
             raise RuntimeError("Failed to dispense water.")
 
         return success
-    
+
     async def custom_command(self, device, **kwargs):
         """
-        Executes a custom command on the given device. 
+        Executes a custom command on the given device.
         !!! Only use this if you know what you are doing. !!!
 
         Args:
@@ -177,7 +191,9 @@ class GroheClient:
         Returns:
             bool: True if the command was executed successfully, False otherwise.
         """
-        success = await execute_custom_command(device, await self.get_access_token(), **kwargs)
+        success = await execute_custom_command(
+            device, await self.get_access_token(), self.httpx_client, **kwargs
+        )
 
         if not success:
             logging.error("Failed to execute custom command.")
